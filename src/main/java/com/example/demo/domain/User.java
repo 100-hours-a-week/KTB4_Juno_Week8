@@ -98,9 +98,6 @@ public class User {
         }
     }
 
-    public boolean isPasswordMatched(String password) {
-        return this.password.equals(password);
-    }
 
     public void updatePassword(String newPassword) {
         this.password = newPassword;
