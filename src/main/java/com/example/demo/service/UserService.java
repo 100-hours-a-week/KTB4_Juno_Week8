@@ -6,6 +6,7 @@ import com.example.demo.exception.ApiException;
 import com.example.demo.repository.LoginSessionRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,10 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
     private final UserRepository userRepository;
     private final LoginSessionRepository loginSessionRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, LoginSessionRepository loginSessionRepository){
+    public UserService(UserRepository userRepository, LoginSessionRepository loginSessionRepository, PasswordEncoder passwordEncoder){
         this.userRepository = userRepository;
         this.loginSessionRepository = loginSessionRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public SignupResponse signup(SignupRequest request){
@@ -30,10 +33,12 @@ public class UserService {
             throw new ApiException(HttpStatus.CONFLICT, "중복된 닉네임입니다.");
         });
 
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+
         User user = userRepository.save(
                 new User(
                         request.getEmail(),
-                        request.getPassword(),
+                        encodedPassword,
                         request.getNickname(),
                         request.getProfileImage()
                 )
@@ -49,7 +54,7 @@ public class UserService {
                         "이메일 또는 비밀번호가 일치하지 않습니다."
                 ));
 
-        if (!user.isPasswordMatched(request.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ApiException(
                     HttpStatus.UNAUTHORIZED,
                     "이메일 또는 비밀번호가 일치하지 않습니다."
