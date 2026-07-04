@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.demo.security.JwtTokenProvider;
 
 @Service
 @Transactional
@@ -16,11 +17,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final LoginSessionRepository loginSessionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public UserService(UserRepository userRepository, LoginSessionRepository loginSessionRepository, PasswordEncoder passwordEncoder){
+    public UserService(
+            UserRepository userRepository,
+            LoginSessionRepository loginSessionRepository,
+            PasswordEncoder passwordEncoder,
+            JwtTokenProvider jwtTokenProvider
+    ) {
         this.userRepository = userRepository;
         this.loginSessionRepository = loginSessionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     public SignupResponse signup(SignupRequest request){
@@ -61,9 +69,16 @@ public class UserService {
             );
         }
 
-        loginSessionRepository.signin(user.getUserId());
+        String accessToken = jwtTokenProvider.createAccessToken(
+                user.getUserId(),
+                user.getEmail()
+        );
 
-        return new SigninResponse(user.getUserId());
+        return new SigninResponse(
+                user.getUserId(),
+                accessToken,
+                "Bearer"
+        );
     }
 
     public void signout(Long userId){
