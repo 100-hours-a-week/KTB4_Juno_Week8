@@ -9,6 +9,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import com.example.demo.security.CustomUserDetails;
 
 @Service
 @Transactional
@@ -17,15 +22,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtTokenProvider jwtTokenProvider
+            JwtTokenProvider jwtTokenProvider,
+            AuthenticationManager authenticationManager
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.authenticationManager = authenticationManager;
     }
 
     public SignupResponse signup(SignupRequest request) {
@@ -53,36 +61,32 @@ public class UserService {
     }
 
     public SigninResponse signin(SigninRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED,
-                        "이메일 또는 비밀번호가 일치하지 않습니다."
-                ));
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
 
-        if (user.isDeleted()) {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+            String accessToken = jwtTokenProvider.createAccessToken(
+                    userDetails.getUserId(),
+                    userDetails.getEmail()
+            );
+
+            return new SigninResponse(
+                    userDetails.getUserId(),
+                    accessToken,
+                    "Bearer"
+            );
+        } catch (AuthenticationException exception) {
             throw new ApiException(
                     HttpStatus.UNAUTHORIZED,
                     "이메일 또는 비밀번호가 일치하지 않습니다."
             );
         }
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new ApiException(
-                    HttpStatus.UNAUTHORIZED,
-                    "이메일 또는 비밀번호가 일치하지 않습니다."
-            );
-        }
-
-        String accessToken = jwtTokenProvider.createAccessToken(
-                user.getUserId(),
-                user.getEmail()
-        );
-
-        return new SigninResponse(
-                user.getUserId(),
-                accessToken,
-                "Bearer"
-        );
     }
 
     @Transactional(readOnly = true)
