@@ -85,11 +85,6 @@ public class UserService {
         );
     }
 
-    public void signout() {
-        // JWT 방식에서는 서버에서 삭제할 세션이 없습니다.
-        // 클라이언트가 access token을 삭제하면 로그아웃 처리됩니다.
-    }
-
     @Transactional(readOnly = true)
     public UserInfoResponse getMyInfo(Long userId) {
         User user = findLoginUser(userId);
