@@ -3,35 +3,32 @@ package com.example.demo.service;
 import com.example.demo.domain.User;
 import com.example.demo.dto.user.*;
 import com.example.demo.exception.ApiException;
-import com.example.demo.repository.LoginSessionRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.security.JwtTokenProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.demo.security.JwtTokenProvider;
 
 @Service
 @Transactional
 public class UserService {
+
     private final UserRepository userRepository;
-    private final LoginSessionRepository loginSessionRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
     public UserService(
             UserRepository userRepository,
-            LoginSessionRepository loginSessionRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenProvider jwtTokenProvider
     ) {
         this.userRepository = userRepository;
-        this.loginSessionRepository = loginSessionRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    public SignupResponse signup(SignupRequest request){
+    public SignupResponse signup(SignupRequest request) {
 
         userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
             throw new ApiException(HttpStatus.CONFLICT, "중복된 이메일입니다.");
@@ -62,6 +59,13 @@ public class UserService {
                         "이메일 또는 비밀번호가 일치하지 않습니다."
                 ));
 
+        if (user.isDeleted()) {
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    "이메일 또는 비밀번호가 일치하지 않습니다."
+            );
+        }
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ApiException(
                     HttpStatus.UNAUTHORIZED,
@@ -81,22 +85,28 @@ public class UserService {
         );
     }
 
-    public void signout(Long userId){
-        if (userId == null || !loginSessionRepository.isSignedIn(userId)) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
-        }
-
-        loginSessionRepository.signout(userId);
+    public void signout() {
+        // JWT 방식에서는 서버에서 삭제할 세션이 없습니다.
+        // 클라이언트가 access token을 삭제하면 로그아웃 처리됩니다.
     }
 
-    public UpdateUserInfoResponse updateUserInfo(Long userId, UpdateUserInfoRequest request){
-        validateSignedInUser(userId);
+    @Transactional(readOnly = true)
+    public UserInfoResponse getMyInfo(Long userId) {
+        User user = findLoginUser(userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED,
-                        "로그인이 필요합니다."
-                ));
+        return new UserInfoResponse(
+                user.getUserId(),
+                user.getEmail(),
+                user.getNickname(),
+                user.getProfileImage()
+        );
+    }
+
+    public UpdateUserInfoResponse updateUserInfo(
+            Long userId,
+            UpdateUserInfoRequest request
+    ) {
+        User user = findLoginUser(userId);
 
         userRepository.findByNickname(request.getNickname()).ifPresent(foundUser -> {
             if (!foundUser.getUserId().equals(userId)) {
@@ -104,20 +114,38 @@ public class UserService {
             }
         });
 
-        user.updateUserInfo(request.getNickname(), request.getProfileImage());
+        user.updateUserInfo(
+                request.getNickname(),
+                request.getProfileImage()
+        );
 
-        return new UpdateUserInfoResponse(user.getNickname(), user.getProfileImage());
+        return new UpdateUserInfoResponse(
+                user.getNickname(),
+                user.getProfileImage()
+        );
     }
 
-    private void validateSignedInUser(Long userId){
-        if (userId == null || !loginSessionRepository.isSignedIn(userId)) {
+    public void updatePassword(
+            Long userId,
+            UpdatePasswordRequest request
+    ) {
+        User user = findLoginUser(userId);
+
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+
+        user.updatePassword(encodedPassword);
+    }
+
+    public void deleteUser(Long userId) {
+        User user = findLoginUser(userId);
+
+        user.withdraw();
+    }
+
+    private User findLoginUser(Long userId) {
+        if (userId == null) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
         }
-    }
-
-    @Transactional(readOnly = true)
-    public UserInfoResponse getMyInfo(Long userId) {
-        validateSignedInUser(userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(
@@ -129,38 +157,6 @@ public class UserService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
         }
 
-        return new UserInfoResponse(
-                user.getUserId(),
-                user.getEmail(),
-                user.getNickname(),
-                user.getProfileImage()
-        );
+        return user;
     }
-
-    public void updatePassword(Long userId, UpdatePasswordRequest request){
-        validateSignedInUser(userId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED,
-                        "로그인이 필요합니다."
-                ));
-
-        user.updatePassword(request.getNewPassword());
-    }
-
-    public void deleteUser(Long userId) {
-        validateSignedInUser(userId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED,
-                        "로그인이 필요합니다."
-                ));
-
-        user.withdraw();
-
-        loginSessionRepository.signout(userId);
-    }
-
 }

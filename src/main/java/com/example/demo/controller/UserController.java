@@ -2,11 +2,13 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.user.*;
+import com.example.demo.security.CustomUserDetails;
 import com.example.demo.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/users")
@@ -42,9 +44,9 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserInfoResponse>> getMyInfo(
-            @RequestHeader(value = "user_id", required = false) Long userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        UserInfoResponse response = userService.getMyInfo(userId);
+        UserInfoResponse response = userService.getMyInfo(userDetails.getUserId());
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -53,10 +55,13 @@ public class UserController {
 
     @PatchMapping("/me")
     public ResponseEntity<ApiResponse<UpdateUserInfoResponse>> updateUserInfo(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UpdateUserInfoRequest request
     ) {
-        UpdateUserInfoResponse response = userService.updateUserInfo(userId, request);
+        UpdateUserInfoResponse response = userService.updateUserInfo(
+                userDetails.getUserId(),
+                request
+        );
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -65,10 +70,10 @@ public class UserController {
 
     @PutMapping("/me/password")
     public ResponseEntity<ApiResponse<Void>> updatePassword(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody UpdatePasswordRequest request
     ) {
-        userService.updatePassword(userId, request);
+        userService.updatePassword(userDetails.getUserId(), request);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -77,19 +82,15 @@ public class UserController {
 
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteUser(
-            @RequestHeader(value = "user_id", required = false) Long userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        userService.deleteUser(userId);
+        userService.deleteUser(userDetails.getUserId());
 
         return ResponseEntity.noContent().build();
     }
 
-
     @PostMapping("/signout")
-    public ResponseEntity<Void> signout(
-            @RequestHeader(value = "user_id", required = false)Long userId
-    ){
-        userService.signout(userId);
+    public ResponseEntity<Void> signout() {
         return ResponseEntity.noContent().build();
     }
 }
