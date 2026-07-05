@@ -1,14 +1,16 @@
 package com.example.demo.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.comment.*;
 import com.example.demo.dto.like.PostLikeResponse;
 import com.example.demo.dto.post.*;
+import com.example.demo.security.CustomUserDetails;
 import com.example.demo.service.PostService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/posts")
@@ -22,10 +24,13 @@ public class PostController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<CreatePostResponse>> createPost(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CreatePostRequest request
     ) {
-        CreatePostResponse response = postService.createPost(userId, request);
+        CreatePostResponse response = postService.createPost(
+                userDetails.getUserId(),
+                request
+        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -43,10 +48,13 @@ public class PostController {
 
     @GetMapping("/{post_id}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> getPost(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId
     ) {
-        PostDetailResponse response = postService.getPost(userId, postId);
+        PostDetailResponse response = postService.getPost(
+                userDetails.getUserId(),
+                postId
+        );
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -55,11 +63,15 @@ public class PostController {
 
     @PatchMapping("/{post_id}")
     public ResponseEntity<ApiResponse<UpdatePostResponse>> updatePost(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId,
             @Valid @RequestBody UpdatePostRequest request
     ) {
-        UpdatePostResponse response = postService.updatePost(userId, postId, request);
+        UpdatePostResponse response = postService.updatePost(
+                userDetails.getUserId(),
+                postId,
+                request
+        );
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -68,10 +80,13 @@ public class PostController {
 
     @DeleteMapping("/{post_id}")
     public ResponseEntity<ApiResponse<DeletePostResponse>> deletePost(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId
     ) {
-        DeletePostResponse response = postService.deletePost(userId, postId);
+        DeletePostResponse response = postService.deletePost(
+                userDetails.getUserId(),
+                postId
+        );
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -80,11 +95,15 @@ public class PostController {
 
     @PostMapping("/{post_id}/comments")
     public ResponseEntity<ApiResponse<CreateCommentResponse>> createComment(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId,
             @Valid @RequestBody CreateCommentRequest request
     ) {
-        CreateCommentResponse response = postService.createComment(userId, postId, request);
+        CreateCommentResponse response = postService.createComment(
+                userDetails.getUserId(),
+                postId,
+                request
+        );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -93,12 +112,17 @@ public class PostController {
 
     @PatchMapping("/{post_id}/comments/{comment_id}")
     public ResponseEntity<ApiResponse<UpdateCommentResponse>> updateComment(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId,
             @PathVariable("comment_id") Long commentId,
             @Valid @RequestBody UpdateCommentRequest request
     ) {
-        UpdateCommentResponse response = postService.updateComment(userId, postId, commentId, request);
+        UpdateCommentResponse response = postService.updateComment(
+                userDetails.getUserId(),
+                postId,
+                commentId,
+                request
+        );
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -107,12 +131,12 @@ public class PostController {
 
     @DeleteMapping("/{post_id}/comments/{comment_id}")
     public ResponseEntity<ApiResponse<DeleteCommentResponse>> deleteComment(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId,
             @PathVariable("comment_id") Long commentId
     ) {
         DeleteCommentResponse response = postService.deleteComment(
-                userId,
+                userDetails.getUserId(),
                 postId,
                 commentId
         );
@@ -124,10 +148,13 @@ public class PostController {
 
     @PostMapping("/{post_id}/likes")
     public ResponseEntity<ApiResponse<PostLikeResponse>> createLike(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId
     ) {
-        PostLikeResponse response = postService.createLike(userId, postId);
+        PostLikeResponse response = postService.createLike(
+                userDetails.getUserId(),
+                postId
+        );
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -136,10 +163,13 @@ public class PostController {
 
     @DeleteMapping("/{post_id}/likes")
     public ResponseEntity<ApiResponse<PostLikeResponse>> deleteLike(
-            @RequestHeader(value = "user_id", required = false) Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId
     ) {
-        PostLikeResponse response = postService.deleteLike(userId, postId);
+        PostLikeResponse response = postService.deleteLike(
+                userDetails.getUserId(),
+                postId
+        );
 
         return ResponseEntity
                 .status(HttpStatus.OK)

@@ -31,7 +31,6 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final LoginSessionRepository loginSessionRepository;
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
     private final PostViewRepository postViewRepository;
@@ -39,27 +38,19 @@ public class PostService {
     public PostService(
             PostRepository postRepository,
             UserRepository userRepository,
-            LoginSessionRepository loginSessionRepository,
             CommentRepository commentRepository,
             LikeRepository likeRepository,
             PostViewRepository postViewRepository
     ) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
-        this.loginSessionRepository = loginSessionRepository;
         this.commentRepository = commentRepository;
         this.likeRepository = likeRepository;
         this.postViewRepository = postViewRepository;
     }
 
     public CreatePostResponse createPost(Long userId, CreatePostRequest request) {
-        validateSignedInUser(userId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED,
-                        "로그인이 필요합니다."
-                ));
+        User user = findLoginUser(userId);
 
         Post post = postRepository.save(
                 new Post(
@@ -71,12 +62,6 @@ public class PostService {
         );
 
         return new CreatePostResponse(post.getPostId());
-    }
-
-    private void validateSignedInUser(Long userId) {
-        if (userId == null || !loginSessionRepository.isSignedIn(userId)) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
-        }
     }
 
     @Transactional(readOnly = true)
@@ -156,7 +141,7 @@ public class PostService {
     }
 
     public UpdatePostResponse updatePost(Long userId, Long postId, UpdatePostRequest request) {
-        validateSignedInUser(userId);
+        findLoginUser(userId);
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ApiException(
@@ -183,7 +168,7 @@ public class PostService {
     }
 
     public DeletePostResponse deletePost(Long userId, Long postId) {
-        validateSignedInUser(userId);
+        findLoginUser(userId);
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ApiException(
@@ -216,7 +201,7 @@ public class PostService {
             Long postId,
             CreateCommentRequest request
     ) {
-        validateSignedInUser(userId);
+        User user = findLoginUser(userId);
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ApiException(
@@ -225,12 +210,6 @@ public class PostService {
                 ));
 
         validateNotDeletedPost(post);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED,
-                        "로그인이 필요합니다."
-                ));
 
         Comment comment = commentRepository.save(
                 new Comment(
@@ -251,7 +230,7 @@ public class PostService {
             Long commentId,
             UpdateCommentRequest request
     ) {
-        validateSignedInUser(userId);
+        findLoginUser(userId);
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ApiException(
@@ -286,7 +265,7 @@ public class PostService {
             Long postId,
             Long commentId
     ) {
-        validateSignedInUser(userId);
+        findLoginUser(userId);
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ApiException(
@@ -318,7 +297,7 @@ public class PostService {
     }
 
     public PostLikeResponse createLike(Long userId, Long postId) {
-        validateSignedInUser(userId);
+        User user = findLoginUser(userId);
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ApiException(
@@ -327,12 +306,6 @@ public class PostService {
                 ));
 
         validateNotDeletedPost(post);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED,
-                        "로그인이 필요합니다."
-                ));
 
         PostLikeId likeId = new PostLikeId(postId, userId);
 
@@ -353,7 +326,7 @@ public class PostService {
     }
 
     public PostLikeResponse deleteLike(Long userId, Long postId) {
-        validateSignedInUser(userId);
+        findLoginUser(userId);
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ApiException(
@@ -362,12 +335,6 @@ public class PostService {
                 ));
 
         validateNotDeletedPost(post);
-
-        userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED,
-                        "로그인이 필요합니다."
-                ));
 
         PostLikeId likeId = new PostLikeId(postId, userId);
 
@@ -387,7 +354,6 @@ public class PostService {
         );
     }
 
-
     private String getDisplayNickname(User user) {
         if (user == null) {
             return "탈퇴한 사용자";
@@ -406,24 +372,11 @@ public class PostService {
 
 
     private boolean isLikedByUser(Long userId, Long postId) {
-        if (userId == null || !loginSessionRepository.isSignedIn(userId)) {
-            return false;
-        }
-
         return likeRepository.existsById(new PostLikeId(postId, userId));
     }
 
     private void increaseViewCountIfNeeded(Long userId, Post post) {
-        if (userId == null || !loginSessionRepository.isSignedIn(userId)) {
-            postRepository.increaseViewCount(post.getPostId());
-            return;
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED,
-                        "로그인이 필요합니다."
-                ));
+        User user = findLoginUser(userId);
 
         PostViewId postViewId = new PostViewId(post.getPostId(), user.getUserId());
 
@@ -460,5 +413,17 @@ public class PostService {
                     "댓글을 찾을 수 없습니다."
             );
         }
+    }
+
+    private User findLoginUser(Long userId) {
+        if (userId == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+        }
+
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.UNAUTHORIZED,
+                        "로그인이 필요합니다."
+                ));
     }
 }
