@@ -105,7 +105,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/users/signup",
                                 "/users/signin",
-                                "/h2-console/**"
+                                "/h2-console/**",
+                                "/uploads/images/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
