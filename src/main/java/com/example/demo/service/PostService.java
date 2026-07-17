@@ -117,6 +117,7 @@ public class PostService {
                             comment.getCommentId(),
                             comment.getContent(),
                             comment.getCreatedAt().format(formatter),
+                            getDisplayUserId(commentAuthor),
                             getDisplayNickname(commentAuthor),
                             getDisplayProfileImage(commentAuthor)
                     );
@@ -352,6 +353,14 @@ public class PostService {
                 likeCount,
                 false
         );
+    }
+
+    private Long getDisplayUserId(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        return user.getUserId();
     }
 
     private String getDisplayNickname(User user) {

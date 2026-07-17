@@ -12,6 +12,9 @@ public class PostDetailCommentResponse {
     @JsonProperty("created_at")
     private String createdAt;
 
+    @JsonProperty("author_id")
+    private Long authorId;
+
     @JsonProperty("author_nickname")
     private String authorNickname;
 
@@ -22,12 +25,14 @@ public class PostDetailCommentResponse {
             Long commentId,
             String content,
             String createdAt,
+            Long authorId,
             String authorNickname,
             String authorProfileImage
     ) {
         this.commentId = commentId;
         this.content = content;
         this.createdAt = createdAt;
+        this.authorId = authorId;
         this.authorNickname = authorNickname;
         this.authorProfileImage = authorProfileImage;
     }
@@ -42,6 +47,10 @@ public class PostDetailCommentResponse {
 
     public String getCreatedAt() {
         return createdAt;
+    }
+
+    public Long getAuthorId() {
+        return authorId;
     }
 
     public String getAuthorNickname() {
