@@ -2,11 +2,11 @@ package com.example.demo.service;
 
 import com.example.demo.domain.Post;
 import com.example.demo.domain.User;
-import com.example.demo.domain.PostLike;
-import com.example.demo.domain.PostLikeId;
+import com.example.demo.domain.PostBookmark;
+import com.example.demo.domain.PostBookmarkId;
 import com.example.demo.domain.PostView;
 import com.example.demo.domain.PostViewId;
-import com.example.demo.dto.like.PostLikeResponse;
+import com.example.demo.dto.bookmark.PostBookmarkResponse;
 import com.example.demo.dto.post.*;
 import com.example.demo.exception.ApiException;
 import com.example.demo.repository.*;
@@ -32,20 +32,20 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
-    private final LikeRepository likeRepository;
+    private final BookmarkRepository bookmarkRepository;
     private final PostViewRepository postViewRepository;
 
     public PostService(
             PostRepository postRepository,
             UserRepository userRepository,
             CommentRepository commentRepository,
-            LikeRepository likeRepository,
+            BookmarkRepository bookmarkRepository,
             PostViewRepository postViewRepository
     ) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentRepository = commentRepository;
-        this.likeRepository = likeRepository;
+        this.bookmarkRepository = bookmarkRepository;
         this.postViewRepository = postViewRepository;
     }
 
@@ -76,7 +76,7 @@ public class PostService {
                     return new PostListItemResponse(
                             post.getPostId(),
                             post.getTitle(),
-                            post.getLikeCount(),
+                            post.getBookmarkCount(),
                             post.getCommentCount(),
                             post.getViewCount(),
                             post.getCreatedAt().format(formatter),
@@ -90,7 +90,8 @@ public class PostService {
     }
 
     public PostDetailResponse getPost(Long userId, Long postId) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ApiException(
@@ -104,35 +105,36 @@ public class PostService {
 
         int viewCount = postRepository.findViewCountByPostId(postId);
 
-        boolean liked = isLikedByUser(userId, postId);
+        boolean bookmarked = isBookmarkedByUser(userId, postId);
 
         User author = post.getAuthor();
 
-        List<PostDetailCommentResponse> comments = commentRepository.findAllByPostAndDeletedAtIsNull(post)
-                .stream()
-                .map(comment -> {
-                    User commentAuthor = comment.getAuthor();
+        List<PostDetailCommentResponse> comments =
+                commentRepository.findAllByPostAndDeletedAtIsNull(post)
+                        .stream()
+                        .map(comment -> {
+                            User commentAuthor = comment.getAuthor();
 
-                    return new PostDetailCommentResponse(
-                            comment.getCommentId(),
-                            comment.getContent(),
-                            comment.getCreatedAt().format(formatter),
-                            getDisplayUserId(commentAuthor),
-                            getDisplayNickname(commentAuthor),
-                            getDisplayProfileImage(commentAuthor)
-                    );
-                })
-                .toList();
+                            return new PostDetailCommentResponse(
+                                    comment.getCommentId(),
+                                    comment.getContent(),
+                                    comment.getCreatedAt().format(formatter),
+                                    getDisplayUserId(commentAuthor),
+                                    getDisplayNickname(commentAuthor),
+                                    getDisplayProfileImage(commentAuthor)
+                            );
+                        })
+                        .toList();
 
         return new PostDetailResponse(
                 post.getPostId(),
                 post.getTitle(),
                 post.getContent(),
                 post.getImage(),
-                post.getLikeCount(),
+                post.getBookmarkCount(),
                 post.getCommentCount(),
                 viewCount,
-                liked,
+                bookmarked,
                 post.getCreatedAt().format(formatter),
                 author.getUserId(),
                 getDisplayNickname(author),
@@ -141,7 +143,11 @@ public class PostService {
         );
     }
 
-    public UpdatePostResponse updatePost(Long userId, Long postId, UpdatePostRequest request) {
+    public UpdatePostResponse updatePost(
+            Long userId,
+            Long postId,
+            UpdatePostRequest request
+    ) {
         findLoginUser(userId);
 
         Post post = postRepository.findById(postId)
@@ -186,7 +192,8 @@ public class PostService {
             );
         }
 
-        List<Comment> comments = commentRepository.findAllByPostAndDeletedAtIsNull(post);
+        List<Comment> comments =
+                commentRepository.findAllByPostAndDeletedAtIsNull(post);
 
         for (Comment comment : comments) {
             comment.delete();
@@ -297,7 +304,12 @@ public class PostService {
         return new DeleteCommentResponse(commentId);
     }
 
-    public PostLikeResponse createLike(Long userId, Long postId) {
+
+
+    public PostBookmarkResponse createBookmark(
+            Long userId,
+            Long postId
+    ) {
         User user = findLoginUser(userId);
 
         Post post = postRepository.findById(postId)
@@ -308,25 +320,34 @@ public class PostService {
 
         validateNotDeletedPost(post);
 
-        PostLikeId likeId = new PostLikeId(postId, userId);
+        PostBookmarkId bookmarkId =
+                new PostBookmarkId(postId, userId);
 
-        boolean alreadyLiked = likeRepository.existsById(likeId);
+        boolean alreadyBookmarked =
+                bookmarkRepository.existsById(bookmarkId);
 
-        if (!alreadyLiked) {
-            likeRepository.save(new PostLike(post, user));
-            postRepository.increaseLikeCount(postId);
+        if (!alreadyBookmarked) {
+            bookmarkRepository.save(
+                    new PostBookmark(post, user)
+            );
+
+            postRepository.increaseBookmarkCount(postId);
         }
 
-        int likeCount = postRepository.findLikeCountByPostId(postId);
+        int bookmarkCount =
+                postRepository.findBookmarkCountByPostId(postId);
 
-        return new PostLikeResponse(
+        return new PostBookmarkResponse(
                 post.getPostId(),
-                likeCount,
+                bookmarkCount,
                 true
         );
     }
 
-    public PostLikeResponse deleteLike(Long userId, Long postId) {
+    public PostBookmarkResponse deleteBookmark(
+            Long userId,
+            Long postId
+    ) {
         findLoginUser(userId);
 
         Post post = postRepository.findById(postId)
@@ -337,24 +358,26 @@ public class PostService {
 
         validateNotDeletedPost(post);
 
-        PostLikeId likeId = new PostLikeId(postId, userId);
+        PostBookmarkId bookmarkId =
+                new PostBookmarkId(postId, userId);
 
-        boolean alreadyLiked = likeRepository.existsById(likeId);
+        boolean alreadyBookmarked =
+                bookmarkRepository.existsById(bookmarkId);
 
-        if (alreadyLiked) {
-            likeRepository.deleteById(likeId);
-            postRepository.decreaseLikeCount(postId);
+        if (alreadyBookmarked) {
+            bookmarkRepository.deleteById(bookmarkId);
+            postRepository.decreaseBookmarkCount(postId);
         }
 
-        int likeCount = postRepository.findLikeCountByPostId(postId);
+        int bookmarkCount =
+                postRepository.findBookmarkCountByPostId(postId);
 
-        return new PostLikeResponse(
+        return new PostBookmarkResponse(
                 post.getPostId(),
-                likeCount,
+                bookmarkCount,
                 false
         );
     }
-
     private Long getDisplayUserId(User user) {
         if (user == null) {
             return null;
@@ -380,14 +403,17 @@ public class PostService {
     }
 
 
-    private boolean isLikedByUser(Long userId, Long postId) {
-        return likeRepository.existsById(new PostLikeId(postId, userId));
+    private boolean isBookmarkedByUser(Long userId, Long postId) {
+        return bookmarkRepository.existsById(
+                new PostBookmarkId(postId, userId)
+        );
     }
 
     private void increaseViewCountIfNeeded(Long userId, Post post) {
         User user = findLoginUser(userId);
 
-        PostViewId postViewId = new PostViewId(post.getPostId(), user.getUserId());
+        PostViewId postViewId =
+                new PostViewId(post.getPostId(), user.getUserId());
 
         PostView postView = postViewRepository.findById(postViewId)
                 .orElse(null);
@@ -398,7 +424,8 @@ public class PostService {
             return;
         }
 
-        LocalDateTime standardTime = LocalDateTime.now().minusHours(24);
+        LocalDateTime standardTime =
+                LocalDateTime.now().minusHours(24);
 
         if (postView.canIncreaseViewCountAfter(standardTime)) {
             postRepository.increaseViewCount(post.getPostId());

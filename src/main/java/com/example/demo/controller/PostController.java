@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.comment.*;
-import com.example.demo.dto.like.PostLikeResponse;
+import com.example.demo.dto.bookmark.PostBookmarkResponse;
 import com.example.demo.dto.post.*;
 import com.example.demo.security.CustomUserDetails;
 import com.example.demo.service.PostService;
@@ -146,33 +146,33 @@ public class PostController {
                 .body(ApiResponse.success("댓글 삭제에 성공하였습니다.", response));
     }
 
-    @PostMapping("/{post_id}/likes")
-    public ResponseEntity<ApiResponse<PostLikeResponse>> createLike(
+    @PostMapping("/{post_id}/bookmarks")
+    public ResponseEntity<ApiResponse<PostBookmarkResponse>> createBookmark(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId
     ) {
-        PostLikeResponse response = postService.createLike(
+        PostBookmarkResponse response = postService.createBookmark(
                 userDetails.getUserId(),
                 postId
         );
 
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(ApiResponse.success("좋아요가 추가되었습니다.", response));
+                .body(ApiResponse.success("북마크가 추가되었습니다.", response));
     }
 
-    @DeleteMapping("/{post_id}/likes")
-    public ResponseEntity<ApiResponse<PostLikeResponse>> deleteLike(
+    @DeleteMapping("/{post_id}/bookmarks")
+    public ResponseEntity<ApiResponse<PostBookmarkResponse>> deleteBookmark(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable("post_id") Long postId
     ) {
-        PostLikeResponse response = postService.deleteLike(
+        PostBookmarkResponse response = postService.deleteBookmark(
                 userDetails.getUserId(),
                 postId
         );
 
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(ApiResponse.success("좋아요가 취소되었습니다.", response));
+                .body(ApiResponse.success("북마크가 취소되었습니다.", response));
     }
 }

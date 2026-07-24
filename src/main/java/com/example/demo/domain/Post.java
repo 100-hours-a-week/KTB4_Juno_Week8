@@ -26,8 +26,8 @@ public class Post {
     @Column(length = 255)
     private String image;
 
-    @Column(name = "like_count", nullable = false)
-    private int likeCount;
+    @Column(name = "bookmark_count", nullable = false)
+    private int bookmarkCount;
 
     @Column(name = "comment_count", nullable = false)
     private int commentCount;
@@ -52,7 +52,7 @@ public class Post {
         this.title = title;
         this.content = content;
         this.image = image;
-        this.likeCount = 0;
+        this.bookmarkCount = 0;
         this.commentCount = 0;
         this.viewCount = 0;
     }
@@ -87,8 +87,8 @@ public class Post {
         return image;
     }
 
-    public int getLikeCount() {
-        return likeCount;
+    public int getBookmarkCount() {
+        return bookmarkCount;
     }
 
     public int getCommentCount() {
@@ -139,13 +139,13 @@ public class Post {
         }
     }
 
-    public void increaseLikeCount() {
-        this.likeCount++;
+    public void increaseBookmarkCount() {
+        this.bookmarkCount++;
     }
 
-    public void decreaseLikeCount() {
-        if (this.likeCount > 0) {
-            this.likeCount--;
+    public void decreaseBookmarkCount() {
+        if (this.bookmarkCount > 0) {
+            this.bookmarkCount--;
         }
     }
 

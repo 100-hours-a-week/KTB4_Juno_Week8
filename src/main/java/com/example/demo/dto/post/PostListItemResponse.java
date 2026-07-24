@@ -9,8 +9,8 @@ public class PostListItemResponse {
 
     private String title;
 
-    @JsonProperty("like_count")
-    private int likeCount;
+    @JsonProperty("bookmark_count")
+    private int bookmarkCount;
 
     @JsonProperty("comment_count")
     private int commentCount;
@@ -30,7 +30,7 @@ public class PostListItemResponse {
     public PostListItemResponse(
             Long postId,
             String title,
-            int likeCount,
+            int bookmarkCount,
             int commentCount,
             int viewCount,
             String createdAt,
@@ -39,7 +39,7 @@ public class PostListItemResponse {
     ) {
         this.postId = postId;
         this.title = title;
-        this.likeCount = likeCount;
+        this.bookmarkCount = bookmarkCount;
         this.commentCount = commentCount;
         this.viewCount = viewCount;
         this.createdAt = createdAt;
@@ -55,8 +55,9 @@ public class PostListItemResponse {
         return title;
     }
 
-    public int getLikeCount() {
-        return likeCount;
+
+    public int getBookmarkCount() {
+        return bookmarkCount;
     }
 
     public int getCommentCount() {
