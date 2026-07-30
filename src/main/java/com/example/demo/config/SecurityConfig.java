@@ -89,11 +89,6 @@ public class SecurityConfig {
                         cors.configurationSource(corsConfigurationSource)
                 )
                 .csrf(AbstractHttpConfigurer::disable)
-                .headers(headers ->
-                        headers.frameOptions(frameOptions ->
-                                frameOptions.disable()
-                        )
-                )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
@@ -107,7 +102,6 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/users/signup",
                                 "/users/signin",
-                                "/h2-console/**",
                                 "/uploads/images/**"
                         ).permitAll()
                         .anyRequest().authenticated()
