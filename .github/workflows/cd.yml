@@ -1,9 +1,9 @@
-name: Backend Continuous Deployment
+name: Backend CD - Deploy to EC2
 
 on:
   workflow_run:
     workflows:
-      - Check Backend Build
+      - Backend CI - Build and Test
     types:
       - completed
     branches:
