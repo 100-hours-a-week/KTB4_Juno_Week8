@@ -11,3 +11,4 @@ build/
 
 # Log
 *.log
+/uploads/
