@@ -1,0 +1,103 @@
+name: Backend CD - Deploy to EC2
+
+on:
+  workflow_run:
+    workflows:
+      - Backend CI - Build and Test
+    types:
+      - completed
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 30m
+
+          script: |
+            set -e
+
+            BACKEND_DIR="/home/ubuntu/KTB4_Juno_Week8"
+            DEPLOY_DIR="/home/ubuntu/KTB4_Juno_Week10"
+
+            echo "===== Update backend repository ====="
+            git -C "$BACKEND_DIR" fetch origin main
+            git -C "$BACKEND_DIR" checkout main
+            git -C "$BACKEND_DIR" pull --ff-only origin main
+
+            echo "===== Update frontend repository ====="
+            git -C "$DEPLOY_DIR" fetch origin main
+            git -C "$DEPLOY_DIR" checkout main
+            git -C "$DEPLOY_DIR" pull --ff-only origin main
+
+            echo "===== Validate environment ====="
+            cd "$DEPLOY_DIR"
+
+            if [ ! -f .env ]; then
+              echo ".env file does not exist."
+              exit 1
+            fi
+
+            docker compose config --quiet
+
+            echo "===== Build and deploy containers ====="
+            docker compose up -d --build --remove-orphans
+
+            echo "===== Wait for services ====="
+            FRONTEND_STATUS="000"
+            API_STATUS="000"
+
+            for attempt in $(seq 1 12); do
+              FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                http://localhost || true)
+
+              API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                http://localhost/api/posts || true)
+
+              echo "Attempt $attempt: frontend=$FRONTEND_STATUS api=$API_STATUS"
+
+              if [ "$FRONTEND_STATUS" = "200" ] &&
+                 { [ "$API_STATUS" = "200" ] || [ "$API_STATUS" = "401" ]; }; then
+                break
+              fi
+
+              sleep 5
+            done
+
+            if [ "$FRONTEND_STATUS" != "200" ]; then
+              echo "Frontend health check failed."
+              docker compose ps
+              docker compose logs --tail=100 frontend
+              exit 1
+            fi
+
+            if [ "$API_STATUS" != "200" ] && [ "$API_STATUS" != "401" ]; then
+              echo "Backend health check failed."
+              docker compose ps
+              docker compose logs --tail=100 backend
+              exit 1
+            fi
+
+            echo "===== Deployment completed ====="
+            docker compose ps

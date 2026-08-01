@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.User;
 import com.example.demo.dto.user.*;
+import org.springframework.test.context.ActiveProfiles;
 import com.example.demo.exception.ApiException;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.example.demo.config.MySqlTestContainerConfig;
+import org.springframework.context.annotation.Import;
+
 @SpringBootTest
+@Import(MySqlTestContainerConfig.class)
+@ActiveProfiles("test")
 @Transactional
 class UserServiceTest {
 

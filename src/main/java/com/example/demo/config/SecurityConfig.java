@@ -55,7 +55,9 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5500",
-                "http://127.0.0.1:5500"
+                "http://127.0.0.1:5500",
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
         ));
 
         configuration.setAllowedMethods(List.of(
@@ -87,11 +89,6 @@ public class SecurityConfig {
                         cors.configurationSource(corsConfigurationSource)
                 )
                 .csrf(AbstractHttpConfigurer::disable)
-                .headers(headers ->
-                        headers.frameOptions(frameOptions ->
-                                frameOptions.disable()
-                        )
-                )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
@@ -105,7 +102,6 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/users/signup",
                                 "/users/signin",
-                                "/h2-console/**",
                                 "/uploads/images/**"
                         ).permitAll()
                         .anyRequest().authenticated()

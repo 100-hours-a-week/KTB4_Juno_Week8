@@ -1,0 +1,12 @@
+.gradle
+build
+out
+
+.git
+.github
+
+.env
+.env.*
+
+*.log
+.DS_Store
