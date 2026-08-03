@@ -8,10 +8,10 @@ public class PostDetailResponse {
     private final String title;
     private final String content;
     private final String image;
-    private final int likeCount;
+    private final int bookmarkCount;
     private final int commentCount;
     private final int viewCount;
-    private final boolean liked;
+    private final boolean bookmarked;
     private final String createdAt;
     private final Long authorId;
     private final String nickname;
@@ -23,10 +23,10 @@ public class PostDetailResponse {
             String title,
             String content,
             String image,
-            int likeCount,
+            int bookmarkCount,
             int commentCount,
             int viewCount,
-            boolean liked,
+            boolean bookmarked,
             String createdAt,
             Long authorId,
             String nickname,
@@ -37,10 +37,10 @@ public class PostDetailResponse {
         this.title = title;
         this.content = content;
         this.image = image;
-        this.likeCount = likeCount;
+        this.bookmarkCount = bookmarkCount;
         this.commentCount = commentCount;
         this.viewCount = viewCount;
-        this.liked = liked;
+        this.bookmarked = bookmarked;
         this.createdAt = createdAt;
         this.authorId = authorId;
         this.nickname = nickname;
@@ -64,9 +64,10 @@ public class PostDetailResponse {
         return image;
     }
 
-    public int getLikeCount() {
-        return likeCount;
+    public int getBookmarkCount() {
+        return bookmarkCount;
     }
+
 
     public int getCommentCount() {
         return commentCount;
@@ -76,8 +77,8 @@ public class PostDetailResponse {
         return viewCount;
     }
 
-    public boolean isLiked() {
-        return liked;
+    public boolean isBookmarked() {
+        return bookmarked;
     }
 
     public String getCreatedAt() {

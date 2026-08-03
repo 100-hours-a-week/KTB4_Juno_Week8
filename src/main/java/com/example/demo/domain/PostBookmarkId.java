@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class PostLikeId implements Serializable {
+public class PostBookmarkId implements Serializable {
 
     @Column(name = "post_id")
     private Long postId;
@@ -15,10 +15,10 @@ public class PostLikeId implements Serializable {
     @Column(name = "user_id")
     private Long userId;
 
-    protected PostLikeId() {
+    protected PostBookmarkId() {
     }
 
-    public PostLikeId(Long postId, Long userId) {
+    public PostBookmarkId(Long postId, Long userId) {
         this.postId = postId;
         this.userId = userId;
     }
@@ -37,7 +37,7 @@ public class PostLikeId implements Serializable {
             return true;
         }
 
-        if (!(o instanceof PostLikeId that)) {
+        if (!(o instanceof PostBookmarkId that)) {
             return false;
         }
 

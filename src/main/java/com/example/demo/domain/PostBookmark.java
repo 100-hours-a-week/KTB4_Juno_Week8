@@ -5,11 +5,11 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "post_likes")
-public class PostLike {
+@Table(name = "post_bookmarks")
+public class PostBookmark {
 
     @EmbeddedId
-    private PostLikeId id;
+    private PostBookmarkId id;
 
     @MapsId("postId")
     @ManyToOne(fetch = FetchType.LAZY)
@@ -24,13 +24,16 @@ public class PostLike {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    protected PostLike() {
+    protected PostBookmark() {
     }
 
-    public PostLike(Post post, User user) {
+    public PostBookmark(Post post, User user) {
         this.post = post;
         this.user = user;
-        this.id = new PostLikeId(post.getPostId(), user.getUserId());
+        this.id = new PostBookmarkId(
+                post.getPostId(),
+                user.getUserId()
+        );
     }
 
     @PrePersist
@@ -38,7 +41,7 @@ public class PostLike {
         this.createdAt = LocalDateTime.now();
     }
 
-    public PostLikeId getId() {
+    public PostBookmarkId getId() {
         return id;
     }
 
