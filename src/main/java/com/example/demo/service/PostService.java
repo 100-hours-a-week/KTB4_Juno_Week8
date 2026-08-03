@@ -21,11 +21,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 import com.example.demo.dto.comment.CreateCommentRequest;
 import com.example.demo.dto.comment.CreateCommentResponse;
 import com.example.demo.dto.comment.DeleteCommentResponse;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @Transactional
@@ -68,28 +76,62 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostListResponse getPostList() {
-        return getPostList(null);
+        return getPostList(null, "latest", 0, 10);
     }
 
     @Transactional(readOnly = true)
     public PostListResponse getPostList(String keyword) {
+        return getPostList(keyword, "latest", 0, 10);
+    }
+
+    @Transactional(readOnly = true)
+    public PostListResponse getPostList(
+            String keyword,
+            String sort,
+            int page,
+            int size
+    ) {
         DateTimeFormatter formatter =
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         String normalizedKeyword =
                 keyword == null ? "" : keyword.trim();
 
-        List<Post> postEntities;
-
-        if (normalizedKeyword.isBlank()) {
-            postEntities =
-                    postRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc();
-        } else {
-            postEntities =
-                    postRepository.searchByKeyword(normalizedKeyword);
+        if (page < 0) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "페이지 번호는 0 이상이어야 합니다."
+            );
         }
 
-        List<PostListItemResponse> posts = postEntities
+        if (size < 1 || size > 100) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "페이지 크기는 1 이상 100 이하여야 합니다."
+            );
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                createSort(sort)
+        );
+
+        Page<Post> postPage;
+
+        if (normalizedKeyword.isBlank()) {
+            postPage =
+                    postRepository.findAllByDeletedAtIsNull(pageable);
+        } else {
+            postPage =
+                    postRepository.searchByKeyword(
+                            normalizedKeyword,
+                            pageable
+                    );
+        }
+
+        List<PostListItemResponse> posts = postPage
+                .getContent()
                 .stream()
                 .map(post -> {
                     User author = post.getAuthor();
@@ -107,7 +149,17 @@ public class PostService {
                 })
                 .toList();
 
-        return new PostListResponse(posts);
+        return new PostListResponse(
+                posts,
+                postPage.getNumber(),
+                postPage.getSize(),
+                postPage.getTotalPages(),
+                postPage.getTotalElements(),
+                postPage.isFirst(),
+                postPage.isLast(),
+                postPage.hasNext(),
+                postPage.hasPrevious()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -431,6 +483,34 @@ public class PostService {
                 false
         );
     }
+
+    private Sort createSort(String sort) {
+        String normalizedSort =
+                sort == null ? "latest" : sort.trim().toLowerCase();
+
+        return switch (normalizedSort) {
+            case "bookmarks" -> Sort.by(
+                    Sort.Order.desc("bookmarkCount"),
+                    Sort.Order.desc("createdAt")
+            );
+            case "views" -> Sort.by(
+                    Sort.Order.desc("viewCount"),
+                    Sort.Order.desc("createdAt")
+            );
+            case "comments" -> Sort.by(
+                    Sort.Order.desc("commentCount"),
+                    Sort.Order.desc("createdAt")
+            );
+            case "latest" -> Sort.by(
+                    Sort.Order.desc("createdAt")
+            );
+            default -> throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "올바르지 않은 게시글 정렬 기준입니다."
+            );
+        };
+    }
+
     private Long getDisplayUserId(User user) {
         if (user == null) {
             return null;

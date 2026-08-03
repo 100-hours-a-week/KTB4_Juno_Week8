@@ -39,9 +39,17 @@ public class PostController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PostListResponse>> getPostList(
-            @RequestParam(name = "keyword", required = false) String keyword
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "sort", defaultValue = "latest") String sort,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
     ) {
-        PostListResponse response = postService.getPostList(keyword);
+        PostListResponse response = postService.getPostList(
+                keyword,
+                sort,
+                page,
+                size
+        );
 
         boolean isSearchRequest =
                 keyword != null && !keyword.trim().isBlank();

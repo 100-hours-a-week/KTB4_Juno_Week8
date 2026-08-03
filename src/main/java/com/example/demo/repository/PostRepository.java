@@ -6,13 +6,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
     @EntityGraph(attributePaths = "author")
-    List<Post> findAllByDeletedAtIsNullOrderByCreatedAtDesc();
+    Page<Post> findAllByDeletedAtIsNull(Pageable pageable);
 
     @EntityGraph(attributePaths = "author")
     @Query("""
@@ -23,9 +23,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
           lower(p.title) like lower(concat('%', :keyword, '%'))
           or lower(p.content) like lower(concat('%', :keyword, '%'))
       )
-    order by p.createdAt desc
 """)
-    List<Post> searchByKeyword(@Param("keyword") String keyword);
+    Page<Post> searchByKeyword(
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 
     @Modifying
     @Query("""
