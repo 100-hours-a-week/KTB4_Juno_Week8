@@ -14,6 +14,19 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = "author")
     List<Post> findAllByDeletedAtIsNullOrderByCreatedAtDesc();
 
+    @EntityGraph(attributePaths = "author")
+    @Query("""
+    select p
+    from Post p
+    where p.deletedAt is null
+      and (
+          lower(p.title) like lower(concat('%', :keyword, '%'))
+          or lower(p.content) like lower(concat('%', :keyword, '%'))
+      )
+    order by p.createdAt desc
+""")
+    List<Post> searchByKeyword(@Param("keyword") String keyword);
+
     @Modifying
     @Query("""
         update Post p

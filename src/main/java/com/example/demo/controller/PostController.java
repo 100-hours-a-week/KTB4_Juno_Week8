@@ -38,8 +38,10 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PostListResponse>> getPostList() {
-        PostListResponse response = postService.getPostList();
+    public ResponseEntity<ApiResponse<PostListResponse>> getPostList(
+            @RequestParam(required = false) String keyword
+    ) {
+        PostListResponse response = postService.getPostList(keyword);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
