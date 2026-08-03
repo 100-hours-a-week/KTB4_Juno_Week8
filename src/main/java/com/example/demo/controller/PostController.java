@@ -38,12 +38,27 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PostListResponse>> getPostList() {
-        PostListResponse response = postService.getPostList();
+    public ResponseEntity<ApiResponse<PostListResponse>> getPostList(
+            @RequestParam(name = "keyword", required = false) String keyword
+    ) {
+        PostListResponse response = postService.getPostList(keyword);
+
+        boolean isSearchRequest =
+                keyword != null && !keyword.trim().isBlank();
+
+        String message;
+
+        if (isSearchRequest && response.getPosts().isEmpty()) {
+            message = "검색 결과가 없습니다.";
+        } else if (isSearchRequest) {
+            message = "게시글 검색에 성공하였습니다.";
+        } else {
+            message = "게시글 목록 조회에 성공하였습니다.";
+        }
 
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(ApiResponse.success("게시글 목록 조회에 성공하였습니다.", response));
+                .body(ApiResponse.success(message, response));
     }
 
     @GetMapping("/{post_id}")

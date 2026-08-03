@@ -68,9 +68,28 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostListResponse getPostList() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return getPostList(null);
+    }
 
-        List<PostListItemResponse> posts = postRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc()
+    @Transactional(readOnly = true)
+    public PostListResponse getPostList(String keyword) {
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        String normalizedKeyword =
+                keyword == null ? "" : keyword.trim();
+
+        List<Post> postEntities;
+
+        if (normalizedKeyword.isBlank()) {
+            postEntities =
+                    postRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc();
+        } else {
+            postEntities =
+                    postRepository.searchByKeyword(normalizedKeyword);
+        }
+
+        List<PostListItemResponse> posts = postEntities
                 .stream()
                 .map(post -> {
                     User author = post.getAuthor();
