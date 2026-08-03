@@ -7,6 +7,8 @@ import com.example.demo.domain.PostBookmarkId;
 import com.example.demo.domain.PostView;
 import com.example.demo.domain.PostViewId;
 import com.example.demo.dto.bookmark.PostBookmarkResponse;
+import com.example.demo.dto.bookmark.BookmarkListItemResponse;
+import com.example.demo.dto.bookmark.BookmarkListResponse;
 import com.example.demo.dto.post.*;
 import com.example.demo.exception.ApiException;
 import com.example.demo.repository.*;
@@ -87,6 +89,38 @@ public class PostService {
                 .toList();
 
         return new PostListResponse(posts);
+    }
+
+    @Transactional(readOnly = true)
+    public BookmarkListResponse getBookmarkList(Long userId) {
+        User user = findLoginUser(userId);
+
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        List<BookmarkListItemResponse> posts =
+                bookmarkRepository
+                        .findAllByUserAndPost_DeletedAtIsNullOrderByCreatedAtDesc(user)
+                        .stream()
+                        .map(bookmark -> {
+                            Post post = bookmark.getPost();
+                            User author = post.getAuthor();
+
+                            return new BookmarkListItemResponse(
+                                    post.getPostId(),
+                                    post.getTitle(),
+                                    post.getBookmarkCount(),
+                                    post.getCommentCount(),
+                                    post.getViewCount(),
+                                    post.getCreatedAt().format(formatter),
+                                    bookmark.getCreatedAt().format(formatter),
+                                    getDisplayNickname(author),
+                                    getDisplayProfileImage(author)
+                            );
+                        })
+                        .toList();
+
+        return new BookmarkListResponse(posts);
     }
 
     public PostDetailResponse getPost(Long userId, Long postId) {
