@@ -28,6 +28,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import com.example.demo.domain.Category;
+import com.example.demo.domain.PostCategory;
+
+import java.util.HashSet;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -41,23 +46,51 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final BookmarkRepository bookmarkRepository;
     private final PostViewRepository postViewRepository;
+    private final CategoryRepository categoryRepository;
+    private final PostCategoryRepository postCategoryRepository;
 
     public PostService(
             PostRepository postRepository,
             UserRepository userRepository,
             CommentRepository commentRepository,
             BookmarkRepository bookmarkRepository,
-            PostViewRepository postViewRepository
+            PostViewRepository postViewRepository,
+            CategoryRepository categoryRepository,
+            PostCategoryRepository postCategoryRepository
     ) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentRepository = commentRepository;
         this.bookmarkRepository = bookmarkRepository;
         this.postViewRepository = postViewRepository;
+        this.categoryRepository = categoryRepository;
+        this.postCategoryRepository = postCategoryRepository;
     }
 
     public CreatePostResponse createPost(Long userId, CreatePostRequest request) {
         User user = findLoginUser(userId);
+
+        List<Long> categoryIds = request.getCategoryIds();
+
+        List<Category> categories = List.of();
+
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            if (new HashSet<>(categoryIds).size() != categoryIds.size()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "같은 카테고리를 중복해서 선택할 수 없습니다."
+                );
+            }
+
+            categories = categoryRepository.findAllById(categoryIds);
+
+            if (categories.size() != categoryIds.size()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "존재하지 않는 카테고리가 포함되어 있습니다."
+                );
+            }
+        }
 
         Post post = postRepository.save(
                 new Post(
@@ -67,6 +100,14 @@ public class PostService {
                         request.getImage()
                 )
         );
+
+        if (!categories.isEmpty()) {
+            List<PostCategory> postCategories = categories.stream()
+                    .map(category -> new PostCategory(post, category))
+                    .toList();
+
+            postCategoryRepository.saveAll(postCategories);
+        }
 
         return new CreatePostResponse(post.getPostId());
     }
