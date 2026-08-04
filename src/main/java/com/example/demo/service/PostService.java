@@ -22,7 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.dto.comment.CreateCommentRequest;
 import com.example.demo.dto.comment.CreateCommentResponse;
 import com.example.demo.dto.comment.DeleteCommentResponse;
+import com.example.demo.dto.category.CategoryItemResponse;
 
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -168,8 +171,43 @@ public class PostService {
                     );
         }
 
-        List<PostListItemResponse> posts = postPage
-                .getContent()
+        List<Post> pagePosts = postPage.getContent();
+
+        List<Long> postIds = pagePosts.stream()
+                .map(Post::getPostId)
+                .toList();
+
+        Map<Long, List<CategoryItemResponse>> categoriesByPostId;
+
+        if (postIds.isEmpty()) {
+            categoriesByPostId = Map.of();
+        } else {
+            categoriesByPostId =
+                    postCategoryRepository
+                            .findAllByPost_PostIdIn(postIds)
+                            .stream()
+                            .collect(Collectors.groupingBy(
+                                    postCategory ->
+                                            postCategory
+                                                    .getPost()
+                                                    .getPostId(),
+                                    Collectors.mapping(
+                                            postCategory ->
+                                                    new CategoryItemResponse(
+                                                            postCategory
+                                                                    .getCategory()
+                                                                    .getCategoryId(),
+                                                            postCategory
+                                                                    .getCategory()
+                                                                    .getName()
+                                                    ),
+                                            Collectors.toList()
+                                    )
+                            ));
+        }
+
+
+        List<PostListItemResponse> posts = pagePosts
                 .stream()
                 .map(post -> {
                     User author = post.getAuthor();
@@ -182,7 +220,11 @@ public class PostService {
                             post.getViewCount(),
                             post.getCreatedAt().format(formatter),
                             getDisplayNickname(author),
-                            getDisplayProfileImage(author)
+                            getDisplayProfileImage(author),
+                            categoriesByPostId.getOrDefault(
+                                    post.getPostId(),
+                                    List.of()
+                            )
                     );
                 })
                 .toList();
@@ -269,6 +311,16 @@ public class PostService {
                         })
                         .toList();
 
+        List<CategoryItemResponse> categories =
+                postCategoryRepository
+                        .findAllByPost(post)
+                        .stream()
+                        .map(postCategory -> new CategoryItemResponse(
+                                postCategory.getCategory().getCategoryId(),
+                                postCategory.getCategory().getName()
+                        ))
+                        .toList();
+
         return new PostDetailResponse(
                 post.getPostId(),
                 post.getTitle(),
@@ -282,6 +334,7 @@ public class PostService {
                 author.getUserId(),
                 getDisplayNickname(author),
                 getDisplayProfileImage(author),
+                categories,
                 comments
         );
     }
