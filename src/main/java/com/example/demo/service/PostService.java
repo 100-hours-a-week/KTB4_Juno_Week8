@@ -308,11 +308,48 @@ public class PostService {
             );
         }
 
+        List<Long> categoryIds = request.getCategoryIds();
+
+        List<Category> categories = List.of();
+
+        if (categoryIds != null) {
+            if (new HashSet<>(categoryIds).size() != categoryIds.size()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "같은 카테고리를 중복해서 선택할 수 없습니다."
+                );
+            }
+
+            if (!categoryIds.isEmpty()) {
+                categories = categoryRepository.findAllById(categoryIds);
+
+                if (categories.size() != categoryIds.size()) {
+                    throw new ApiException(
+                            HttpStatus.BAD_REQUEST,
+                            "존재하지 않는 카테고리가 포함되어 있습니다."
+                    );
+                }
+            }
+        }
+
         post.update(
                 request.getTitle(),
                 request.getContent(),
                 request.getImage()
         );
+
+        if (categoryIds != null) {
+            postCategoryRepository.deleteAllByPost(post);
+            postCategoryRepository.flush();
+
+            if (!categories.isEmpty()) {
+                List<PostCategory> postCategories = categories.stream()
+                        .map(category -> new PostCategory(post, category))
+                        .toList();
+
+                postCategoryRepository.saveAll(postCategories);
+            }
+        }
 
         return new UpdatePostResponse(post.getPostId());
     }
