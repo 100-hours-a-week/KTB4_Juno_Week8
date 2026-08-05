@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface PostRepository extends JpaRepository<Post, Long> {
 
     @EntityGraph(attributePaths = "author")
@@ -26,6 +28,81 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 """)
     Page<Post> searchByKeyword(
             @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = "author")
+    @Query(
+            value = """
+            select p
+            from Post p
+            where p.deletedAt is null
+              and p.postId in (
+                  select pc.post.postId
+                  from PostCategory pc
+                  where pc.category.categoryId in :categoryIds
+                  group by pc.post.postId
+                  having count(distinct pc.category.categoryId) = :categoryCount
+              )
+        """,
+            countQuery = """
+            select count(p)
+            from Post p
+            where p.deletedAt is null
+              and p.postId in (
+                  select pc.post.postId
+                  from PostCategory pc
+                  where pc.category.categoryId in :categoryIds
+                  group by pc.post.postId
+                  having count(distinct pc.category.categoryId) = :categoryCount
+              )
+        """
+    )
+    Page<Post> findByCategoryIds(
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("categoryCount") long categoryCount,
+            Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = "author")
+    @Query(
+            value = """
+            select p
+            from Post p
+            where p.deletedAt is null
+              and (
+                  lower(p.title) like lower(concat('%', :keyword, '%'))
+                  or lower(p.content) like lower(concat('%', :keyword, '%'))
+              )
+              and p.postId in (
+                  select pc.post.postId
+                  from PostCategory pc
+                  where pc.category.categoryId in :categoryIds
+                  group by pc.post.postId
+                  having count(distinct pc.category.categoryId) = :categoryCount
+              )
+        """,
+            countQuery = """
+            select count(p)
+            from Post p
+            where p.deletedAt is null
+              and (
+                  lower(p.title) like lower(concat('%', :keyword, '%'))
+                  or lower(p.content) like lower(concat('%', :keyword, '%'))
+              )
+              and p.postId in (
+                  select pc.post.postId
+                  from PostCategory pc
+                  where pc.category.categoryId in :categoryIds
+                  group by pc.post.postId
+                  having count(distinct pc.category.categoryId) = :categoryCount
+              )
+        """
+    )
+    Page<Post> searchByKeywordAndCategoryIds(
+            @Param("keyword") String keyword,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("categoryCount") long categoryCount,
             Pageable pageable
     );
 

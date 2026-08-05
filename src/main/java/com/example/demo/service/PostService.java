@@ -117,17 +117,18 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostListResponse getPostList() {
-        return getPostList(null, "latest", 0, 10);
+        return getPostList(null,null, "latest", 0, 10);
     }
 
     @Transactional(readOnly = true)
     public PostListResponse getPostList(String keyword) {
-        return getPostList(keyword, "latest", 0, 10);
+        return getPostList(keyword, null, "latest", 0, 10);
     }
 
     @Transactional(readOnly = true)
     public PostListResponse getPostList(
             String keyword,
+            List<Long> categoryIds,
             String sort,
             int page,
             int size
@@ -137,6 +138,45 @@ public class PostService {
 
         String normalizedKeyword =
                 keyword == null ? "" : keyword.trim();
+
+        List<Long> normalizedCategoryIds =
+                categoryIds == null ? List.of() : categoryIds;
+
+        if (normalizedCategoryIds.size() > 3) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "카테고리는 최대 3개까지 선택할 수 있습니다."
+            );
+        }
+
+        if (new HashSet<>(normalizedCategoryIds).size()
+                != normalizedCategoryIds.size()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "같은 카테고리를 중복해서 선택할 수 없습니다."
+            );
+        }
+
+        if (normalizedCategoryIds.stream()
+                .anyMatch(categoryId ->
+                        categoryId == null || categoryId <= 0)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "카테고리 ID는 양수여야 합니다."
+            );
+        }
+
+        if (!normalizedCategoryIds.isEmpty()) {
+            List<Category> categories =
+                    categoryRepository.findAllById(normalizedCategoryIds);
+
+            if (categories.size() != normalizedCategoryIds.size()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "존재하지 않는 카테고리가 포함되어 있습니다."
+                );
+            }
+        }
 
         if (page < 0) {
             throw new ApiException(
@@ -160,13 +200,34 @@ public class PostService {
 
         Page<Post> postPage;
 
-        if (normalizedKeyword.isBlank()) {
+        boolean hasKeyword = !normalizedKeyword.isBlank();
+        boolean hasCategories = !normalizedCategoryIds.isEmpty();
+
+        if (!hasKeyword && !hasCategories) {
             postPage =
                     postRepository.findAllByDeletedAtIsNull(pageable);
-        } else {
+
+        } else if (hasKeyword && !hasCategories) {
             postPage =
                     postRepository.searchByKeyword(
                             normalizedKeyword,
+                            pageable
+                    );
+
+        } else if (!hasKeyword) {
+            postPage =
+                    postRepository.findByCategoryIds(
+                            normalizedCategoryIds,
+                            normalizedCategoryIds.size(),
+                            pageable
+                    );
+
+        } else {
+            postPage =
+                    postRepository.searchByKeywordAndCategoryIds(
+                            normalizedKeyword,
+                            normalizedCategoryIds,
+                            normalizedCategoryIds.size(),
                             pageable
                     );
         }
