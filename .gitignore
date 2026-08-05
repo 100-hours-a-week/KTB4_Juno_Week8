@@ -13,4 +13,6 @@ build/
 *.log
 
 # Uploaded files
-/uploads/
+/uploads/*
+!/uploads/categories/
+!/uploads/categories/*.webp

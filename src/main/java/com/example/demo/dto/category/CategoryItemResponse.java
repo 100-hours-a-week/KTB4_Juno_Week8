@@ -8,13 +8,16 @@ public class CategoryItemResponse {
     private Long categoryId;
 
     private String name;
+    private String image;
 
     public CategoryItemResponse(
             Long categoryId,
-            String name
+            String name,
+            String image
     ) {
         this.categoryId = categoryId;
         this.name = name;
+        this.image = image;
     }
 
     public Long getCategoryId() {
@@ -23,5 +26,9 @@ public class CategoryItemResponse {
 
     public String getName() {
         return name;
+    }
+
+    public String getImage(){
+        return image;
     }
 }

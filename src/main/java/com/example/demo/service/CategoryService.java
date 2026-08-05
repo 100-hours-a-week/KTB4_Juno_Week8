@@ -27,7 +27,8 @@ public class CategoryService {
                         .stream()
                         .map(category -> new CategoryItemResponse(
                                 category.getCategoryId(),
-                                category.getName()
+                                category.getName(),
+                                category.getImage()
                         ))
                         .toList();
 
