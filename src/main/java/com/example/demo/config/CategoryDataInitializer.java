@@ -4,6 +4,7 @@ import com.example.demo.domain.Category;
 import com.example.demo.repository.CategoryRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,22 +20,60 @@ public class CategoryDataInitializer implements CommandLineRunner {
     }
 
     @Override
+    @Transactional
     public void run(String... args) {
-        List<String> categoryNames = List.of(
-                "얼얼한 매운맛",
-                "달콤고소한 맛",
-                "새콤상큼한 맛",
-                "짭짤한 간장 맛",
-                "고소한 참깨 맛",
-                "연예인 추천 조합"
+        List<CategoryDefaultData> categoryDefaultData = List.of(
+                new CategoryDefaultData(
+                        "얼얼한 매운맛",
+                        "/uploads/categories/spicy.webp"
+                ),
+                new CategoryDefaultData(
+                        "달콤고소한 맛",
+                        "/uploads/categories/sweet-nutty.webp"
+                ),
+                new CategoryDefaultData(
+                        "새콤상큼한 맛",
+                        "/uploads/categories/sour-fresh.webp"
+                ),
+                new CategoryDefaultData(
+                        "짭짤한 간장 맛",
+                        "/uploads/categories/soy-salty.webp"
+                ),
+                new CategoryDefaultData(
+                        "고소한 참깨 맛",
+                        "/uploads/categories/sesame-nutty.webp"
+                ),
+                new CategoryDefaultData(
+                        "연예인 추천 조합",
+                        "/uploads/categories/celebrity-pick.webp"
+                )
         );
 
-        for (String categoryName : categoryNames) {
-            if (!categoryRepository.existsByName(categoryName)) {
-                categoryRepository.save(
-                        new Category(categoryName)
-                );
-            }
+        List<Category> categories = categoryRepository.findAll();
+
+        for (CategoryDefaultData defaultData : categoryDefaultData) {
+            Category category = categories.stream()
+                    .filter(currentCategory ->
+                            currentCategory.getName()
+                                    .equals(defaultData.name())
+                    )
+                    .findFirst()
+                    .orElseGet(() ->
+                            categoryRepository.save(
+                                    new Category(
+                                            defaultData.name(),
+                                            defaultData.image()
+                                    )
+                            )
+                    );
+
+            category.applyDefaultImage(defaultData.image());
         }
+    }
+
+    private record CategoryDefaultData(
+            String name,
+            String image
+    ) {
     }
 }

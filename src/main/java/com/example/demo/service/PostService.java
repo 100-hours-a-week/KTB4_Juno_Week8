@@ -260,7 +260,8 @@ public class PostService {
                                                                     .getCategoryId(),
                                                             postCategory
                                                                     .getCategory()
-                                                                    .getName()
+                                                                    .getName(),
+                                                            postCategory.getCategory().getImage()
                                                     ),
                                             Collectors.toList()
                                     )
@@ -340,7 +341,8 @@ public class PostService {
                                                                     .getCategoryId(),
                                                             postCategory
                                                                     .getCategory()
-                                                                    .getName()
+                                                                    .getName(),
+                                                            postCategory.getCategory().getImage()
                                                     ),
                                             Collectors.toList()
                                     )
@@ -418,7 +420,8 @@ public class PostService {
                         .stream()
                         .map(postCategory -> new CategoryItemResponse(
                                 postCategory.getCategory().getCategoryId(),
-                                postCategory.getCategory().getName()
+                                postCategory.getCategory().getName(),
+                                postCategory.getCategory().getImage()
                         ))
                         .toList();
 

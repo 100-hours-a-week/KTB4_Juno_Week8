@@ -14,11 +14,26 @@ public class Category {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column(length = 500)
+    private String image;
+
     protected Category() {
     }
 
     public Category(String name) {
         this.name = name;
+    }
+
+    public Category(
+            String name,
+            String image
+    ) {
+        this.name = name;
+        this.image = image;
+    }
+
+    public void applyDefaultImage(String image) {
+        this.image = image;
     }
 
     public Long getCategoryId() {
@@ -27,5 +42,9 @@ public class Category {
 
     public String getName() {
         return name;
+    }
+
+    public String getImage() {
+        return image;
     }
 }
