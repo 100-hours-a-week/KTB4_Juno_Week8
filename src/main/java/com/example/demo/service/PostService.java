@@ -310,9 +310,45 @@ public class PostService {
         DateTimeFormatter formatter =
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-        List<BookmarkListItemResponse> posts =
+        List<PostBookmark> bookmarks =
                 bookmarkRepository
-                        .findAllByUserAndPost_DeletedAtIsNullOrderByCreatedAtDesc(user)
+                        .findAllByUserAndPost_DeletedAtIsNullOrderByCreatedAtDesc(user);
+
+        List<Long> postIds = bookmarks.stream()
+                .map(bookmark -> bookmark.getPost().getPostId())
+                .toList();
+
+        Map<Long, List<CategoryItemResponse>> categoriesByPostId;
+
+        if (postIds.isEmpty()) {
+            categoriesByPostId = Map.of();
+        } else {
+            categoriesByPostId =
+                    postCategoryRepository
+                            .findAllByPost_PostIdIn(postIds)
+                            .stream()
+                            .collect(Collectors.groupingBy(
+                                    postCategory ->
+                                            postCategory
+                                                    .getPost()
+                                                    .getPostId(),
+                                    Collectors.mapping(
+                                            postCategory ->
+                                                    new CategoryItemResponse(
+                                                            postCategory
+                                                                    .getCategory()
+                                                                    .getCategoryId(),
+                                                            postCategory
+                                                                    .getCategory()
+                                                                    .getName()
+                                                    ),
+                                            Collectors.toList()
+                                    )
+                            ));
+        }
+
+        List<BookmarkListItemResponse> posts =
+                bookmarks
                         .stream()
                         .map(bookmark -> {
                             Post post = bookmark.getPost();
@@ -327,7 +363,11 @@ public class PostService {
                                     post.getCreatedAt().format(formatter),
                                     bookmark.getCreatedAt().format(formatter),
                                     getDisplayNickname(author),
-                                    getDisplayProfileImage(author)
+                                    getDisplayProfileImage(author),
+                                    categoriesByPostId.getOrDefault(
+                                            post.getPostId(),
+                                            List.of()
+                                    )
                             );
                         })
                         .toList();

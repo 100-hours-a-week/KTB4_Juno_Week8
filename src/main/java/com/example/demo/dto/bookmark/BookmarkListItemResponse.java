@@ -1,4 +1,8 @@
 package com.example.demo.dto.bookmark;
+import com.example.demo.dto.category.CategoryItemResponse;
+
+import java.util.List;
+
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -30,6 +34,8 @@ public class BookmarkListItemResponse {
     @JsonProperty("author_profile_image")
     private final String authorProfileImage;
 
+    private final List<CategoryItemResponse> categories;
+
     public BookmarkListItemResponse(
             Long postId,
             String title,
@@ -39,7 +45,8 @@ public class BookmarkListItemResponse {
             String createdAt,
             String bookmarkedAt,
             String authorNickname,
-            String authorProfileImage
+            String authorProfileImage,
+            List<CategoryItemResponse> categories
     ) {
         this.postId = postId;
         this.title = title;
@@ -50,6 +57,7 @@ public class BookmarkListItemResponse {
         this.bookmarkedAt = bookmarkedAt;
         this.authorNickname = authorNickname;
         this.authorProfileImage = authorProfileImage;
+        this.categories = categories;
     }
 
     public Long getPostId() {
@@ -86,5 +94,9 @@ public class BookmarkListItemResponse {
 
     public String getAuthorProfileImage() {
         return authorProfileImage;
+    }
+
+    public List<CategoryItemResponse> getCategories() {
+        return categories;
     }
 }
