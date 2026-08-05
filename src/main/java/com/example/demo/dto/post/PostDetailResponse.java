@@ -1,6 +1,7 @@
 package com.example.demo.dto.post;
 
 import java.util.List;
+import com.example.demo.dto.category.CategoryItemResponse;
 
 public class PostDetailResponse {
 
@@ -17,6 +18,8 @@ public class PostDetailResponse {
     private final String nickname;
     private final String profileImage;
     private final List<PostDetailCommentResponse> comments;
+    private final List<CategoryItemResponse> categories;
+
 
     public PostDetailResponse(
             Long postId,
@@ -31,6 +34,7 @@ public class PostDetailResponse {
             Long authorId,
             String nickname,
             String profileImage,
+            List<CategoryItemResponse> categories,
             List<PostDetailCommentResponse> comments
     ) {
         this.postId = postId;
@@ -46,6 +50,7 @@ public class PostDetailResponse {
         this.nickname = nickname;
         this.profileImage = profileImage;
         this.comments = comments;
+        this.categories = categories;
     }
 
     public Long getPostId() {
@@ -95,6 +100,10 @@ public class PostDetailResponse {
 
     public String getProfileImage() {
         return profileImage;
+    }
+
+    public List<CategoryItemResponse> getCategories() {
+        return categories;
     }
 
     public List<PostDetailCommentResponse> getComments() {

@@ -2,6 +2,10 @@ package com.example.demo.dto.post;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import com.example.demo.dto.category.CategoryItemResponse;
+
+import java.util.List;
+
 public class PostListItemResponse {
 
     @JsonProperty("post_id")
@@ -27,6 +31,8 @@ public class PostListItemResponse {
     @JsonProperty("author_profile_image")
     private String authorProfileImage;
 
+    private List<CategoryItemResponse> categories;
+
     public PostListItemResponse(
             Long postId,
             String title,
@@ -35,7 +41,8 @@ public class PostListItemResponse {
             int viewCount,
             String createdAt,
             String authorNickname,
-            String authorProfileImage
+            String authorProfileImage,
+            List<CategoryItemResponse> categories
     ) {
         this.postId = postId;
         this.title = title;
@@ -45,6 +52,7 @@ public class PostListItemResponse {
         this.createdAt = createdAt;
         this.authorNickname = authorNickname;
         this.authorProfileImage = authorProfileImage;
+        this.categories = categories;
     }
 
     public Long getPostId() {
@@ -78,5 +86,9 @@ public class PostListItemResponse {
 
     public String getAuthorProfileImage() {
         return authorProfileImage;
+    }
+
+    public List<CategoryItemResponse> getCategories() {
+        return categories;
     }
 }
