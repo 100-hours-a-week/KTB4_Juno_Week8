@@ -4,15 +4,15 @@ import java.util.List;
 
 public class CategoryListResponse {
 
-    private List<CategoryItemResponse> categories;
+    private final List<CategoryListItemResponse> categories;
 
     public CategoryListResponse(
-            List<CategoryItemResponse> categories
+            List<CategoryListItemResponse> categories
     ) {
         this.categories = categories;
     }
 
-    public List<CategoryItemResponse> getCategories() {
+    public List<CategoryListItemResponse> getCategories() {
         return categories;
     }
 }
