@@ -51,6 +51,7 @@ public class PostService {
     private final PostViewRepository postViewRepository;
     private final CategoryRepository categoryRepository;
     private final PostCategoryRepository postCategoryRepository;
+    private final ImageService imageService;
 
     public PostService(
             PostRepository postRepository,
@@ -59,7 +60,8 @@ public class PostService {
             BookmarkRepository bookmarkRepository,
             PostViewRepository postViewRepository,
             CategoryRepository categoryRepository,
-            PostCategoryRepository postCategoryRepository
+            PostCategoryRepository postCategoryRepository,
+            ImageService imageService
     ) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
@@ -68,6 +70,7 @@ public class PostService {
         this.postViewRepository = postViewRepository;
         this.categoryRepository = categoryRepository;
         this.postCategoryRepository = postCategoryRepository;
+        this.imageService = imageService;
     }
 
     public CreatePostResponse createPost(Long userId, CreatePostRequest request) {
@@ -429,7 +432,7 @@ public class PostService {
                 post.getPostId(),
                 post.getTitle(),
                 post.getContent(),
-                post.getImage(),
+                imageService.createPresignedUrl(post.getImage()),
                 post.getBookmarkCount(),
                 post.getCommentCount(),
                 viewCount,
