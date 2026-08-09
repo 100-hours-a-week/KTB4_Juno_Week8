@@ -10,24 +10,34 @@ import com.example.demo.repository.ChatRoomRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional;import com.example.demo.domain.ChatMessage;
+import com.example.demo.dto.chat.ChatMessageRequest;
+import com.example.demo.dto.chat.ChatMessageResponse;
+import com.example.demo.repository.ChatMessageRepository;
+import com.example.demo.domain.ChatRoomMember;
+
+import java.util.List;
+
 
 @Service
 public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ImageService imageService;
 
     public ChatService(
             ChatRoomRepository chatRoomRepository,
             ChatRoomMemberRepository chatRoomMemberRepository,
+            ChatMessageRepository chatMessageRepository,
             UserRepository userRepository,
             ImageService imageService
     ) {
         this.chatRoomRepository = chatRoomRepository;
         this.chatRoomMemberRepository = chatRoomMemberRepository;
+        this.chatMessageRepository = chatMessageRepository;
         this.userRepository = userRepository;
         this.imageService = imageService;
     }
@@ -92,5 +102,75 @@ public class ChatService {
         );
 
         return chatRoom;
+    }
+    @Transactional
+    public ChatMessageResponse saveMessage(
+            Long senderId,
+            ChatMessageRequest request
+    ) {
+        ChatRoom chatRoom = chatRoomRepository
+                .findById(request.getChatRoomId())
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "채팅방을 찾을 수 없습니다."
+                ));
+
+        boolean isMember =
+                chatRoomMemberRepository
+                        .existsByChatRoomChatRoomIdAndUserUserId(
+                                chatRoom.getChatRoomId(),
+                                senderId
+                        );
+
+        if (!isMember) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "해당 채팅방에 참여할 권한이 없습니다."
+            );
+        }
+
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "사용자를 찾을 수 없습니다."
+                ));
+
+        ChatMessage chatMessage = chatMessageRepository.save(
+                new ChatMessage(
+                        chatRoom,
+                        sender,
+                        request.getContent().trim()
+                )
+        );
+
+        return new ChatMessageResponse(
+                chatMessage.getMessageId(),
+                chatRoom.getChatRoomId(),
+                sender.getUserId(),
+                sender.getNickname(),
+                chatMessage.getContent(),
+                chatMessage.getCreatedAt()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public String getReceiverEmail(
+            Long chatRoomId,
+            Long senderId
+    ) {
+        List<ChatRoomMember> members =
+                chatRoomMemberRepository
+                        .findAllByChatRoomChatRoomId(chatRoomId);
+
+        User receiver = members.stream()
+                .map(ChatRoomMember::getUser)
+                .filter(user -> !user.getUserId().equals(senderId))
+                .findFirst()
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "채팅 상대방을 찾을 수 없습니다."
+                ));
+
+        return receiver.getEmail();
     }
 }
