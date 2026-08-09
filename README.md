@@ -1,3 +1,12 @@
+<p align="center">
+  <img
+    width="128"
+    height="128"
+    alt="favicon"
+    src="https://github.com/user-attachments/assets/58d5d1a4-bbe1-4984-b9fc-2462057f19ab"
+  />
+</p>
+
 # 마라보자 Backend (See Mara)
 
 마라보자는 마라탕이나 훠궈를 먹을 때 찍어 먹는 다양한 소스 조합을 사용자들이 직접 작성하고 모아볼 수 있는 커뮤니티 서비스입니다.
