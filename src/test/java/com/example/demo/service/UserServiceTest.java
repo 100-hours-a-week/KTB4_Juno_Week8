@@ -17,6 +17,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.demo.config.MySqlTestContainerConfig;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @Import(MySqlTestContainerConfig.class)
@@ -33,6 +36,9 @@ class UserServiceTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @MockitoBean
+    private ImageService imageService;
+
     @Test
     @DisplayName("회원가입에 성공한다")
     void signupSuccess() {
@@ -47,7 +53,6 @@ class UserServiceTest {
         // when
         SignupResponse response = userService.signup(request);
 
-        // then
         assertThat(response.getUserId()).isNotNull();
 
         User savedUser = userRepository.findByEmail("test@example.com")
@@ -55,10 +60,14 @@ class UserServiceTest {
 
         assertThat(savedUser.getEmail()).isEqualTo("test@example.com");
         assertThat(savedUser.getNickname()).isEqualTo("testUser");
-        assertThat(savedUser.getProfileImage()).isEqualTo("/uploads/images/profile.png");
+        assertThat(savedUser.getProfileImage())
+                .isEqualTo("/uploads/images/profile.png");
 
         assertThat(savedUser.getPassword()).isNotEqualTo("Password123!");
-        assertThat(passwordEncoder.matches("Password123!", savedUser.getPassword())).isTrue();
+        assertThat(passwordEncoder.matches(
+                "Password123!",
+                savedUser.getPassword()
+        )).isTrue();
     }
 
     @Test
@@ -191,6 +200,8 @@ class UserServiceTest {
         );
 
         SignupResponse signupResponse = userService.signup(signupRequest);
+        when(imageService.createPresignedUrl("/uploads/images/profile.png"))
+                .thenReturn("https://test.example.com/profile.png");
 
         // when
         UserInfoResponse response = userService.getMyInfo(signupResponse.getUserId());
@@ -199,7 +210,8 @@ class UserServiceTest {
         assertThat(response.getUserId()).isEqualTo(signupResponse.getUserId());
         assertThat(response.getEmail()).isEqualTo("myinfo@example.com");
         assertThat(response.getNickname()).isEqualTo("myInfoUser");
-        assertThat(response.getProfileImage()).isEqualTo("/uploads/images/profile.png");
+        assertThat(response.getProfileImage())
+                .isEqualTo("https://test.example.com/profile.png");
     }
 
     @Test
@@ -213,28 +225,41 @@ class UserServiceTest {
                 "/uploads/images/before.png"
         );
 
-        SignupResponse signupResponse = userService.signup(signupRequest);
+        SignupResponse signupResponse =
+                userService.signup(signupRequest);
 
-        UpdateUserInfoRequest updateRequest = createUpdateUserInfoRequest(
-                "afterNickname",
-                "/uploads/images/after.png"
-        );
+        UpdateUserInfoRequest updateRequest =
+                createUpdateUserInfoRequest(
+                        "afterNickname",
+                        "/uploads/images/after.png"
+                );
+
+        when(imageService.createPresignedUrl("/uploads/images/after.png"))
+                .thenReturn("https://test.example.com/after.png");
 
         // when
-        UpdateUserInfoResponse response = userService.updateUserInfo(
-                signupResponse.getUserId(),
-                updateRequest
-        );
+        UpdateUserInfoResponse response =
+                userService.updateUserInfo(
+                        signupResponse.getUserId(),
+                        updateRequest
+                );
 
         // then
-        assertThat(response.getNickname()).isEqualTo("afterNickname");
-        assertThat(response.getProfileImage()).isEqualTo("/uploads/images/after.png");
+        assertThat(response.getNickname())
+                .isEqualTo("afterNickname");
 
-        User savedUser = userRepository.findById(signupResponse.getUserId())
-                .orElseThrow();
+        assertThat(response.getProfileImage())
+                .isEqualTo("https://test.example.com/after.png");
 
-        assertThat(savedUser.getNickname()).isEqualTo("afterNickname");
-        assertThat(savedUser.getProfileImage()).isEqualTo("/uploads/images/after.png");
+        User savedUser =
+                userRepository.findById(signupResponse.getUserId())
+                        .orElseThrow();
+
+        assertThat(savedUser.getNickname())
+                .isEqualTo("afterNickname");
+
+        assertThat(savedUser.getProfileImage())
+                .isEqualTo("/uploads/images/after.png");
     }
 
     @Test
