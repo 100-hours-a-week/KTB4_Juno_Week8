@@ -330,29 +330,7 @@ EC2에서는 Access Key를 직접 저장하지 않고 IAM Role을 사용해 S3�
 
 ---
 
-## 3. 기술 스택
-
-| 구분 | 기술 |
-| --- | --- |
-| Language | Java 17 |
-| Framework | Spring Boot 4.0.6 |
-| Web | Spring MVC |
-| ORM | Spring Data JPA |
-| Security | Spring Security |
-| Authentication | JWT |
-| Database | MySQL 8.4 |
-| Build Tool | Gradle |
-| Test | JUnit, Testcontainers |
-| Image Storage | Amazon S3 |
-| AWS SDK | AWS SDK for Java v2 |
-| Infrastructure | AWS EC2 |
-| Container | Docker, Docker Compose |
-| Reverse Proxy | Nginx |
-| CI/CD | GitHub Actions |
-
----
-
-## 4. 빠른 시작
+## 3. 빠른 시작
 
 ### 사전 요구 사항
 
@@ -492,7 +470,7 @@ community-mysql
 
 ---
 
-## 5. 디렉토리 구조
+## 4. 디렉토리 구조
 
 ```text
 src
@@ -533,7 +511,7 @@ MySQL
 
 ---
 
-## 6. 아키텍처 개요
+## 5. 아키텍처 개요
 
 ```text
                          Internet
@@ -624,97 +602,3 @@ mysql-data
 이미지는 Docker Volume을 사용하지 않고 Amazon S3에 저장합니다.
 
 ---
-
-## 7. API 엔드포인트 예제
-
-백엔드 Controller 기준 Endpoint는 `/users`, `/posts`와 같은 형태입니다.
-
-실제 배포 환경에서는 Nginx가 `/api/**` 요청을 Backend로 Reverse Proxy합니다.
-
-### 인증 / 사용자
-
-| 기능 | Method | Endpoint |
-| --- | --- | --- |
-| 로그인 | POST | `/users/signin` |
-| 회원가입 | POST | `/users/signup` |
-| 로그아웃 | POST | `/users/signout` |
-| 내 정보 조회 | GET | `/users/me` |
-| 내 정보 수정 | PATCH | `/users/me` |
-| 비밀번호 변경 | PUT | `/users/me/password` |
-| 회원 탈퇴 | DELETE | `/users/me` |
-| 내 북마크 조회 | GET | `/users/me/bookmarks` |
-
----
-
-### 게시글
-
-| 기능 | Method | Endpoint |
-| --- | --- | --- |
-| 게시글 목록 조회 | GET | `/posts` |
-| 게시글 상세 조회 | GET | `/posts/{postId}` |
-| 게시글 작성 | POST | `/posts` |
-| 게시글 수정 | PATCH | `/posts/{postId}` |
-| 게시글 삭제 | DELETE | `/posts/{postId}` |
-
-목록 조회 예시:
-
-```http
-GET /posts?keyword=땅콩소스&sort=bookmarks&page=0&size=10
-```
-
----
-
-### 북마크
-
-| 기능 | Method | Endpoint |
-| --- | --- | --- |
-| 북마크 등록 | POST | `/posts/{postId}/bookmarks` |
-| 북마크 취소 | DELETE | `/posts/{postId}/bookmarks` |
-
-```http
-POST /posts/1/bookmarks
-Authorization: Bearer {accessToken}
-```
-
----
-
-### 댓글
-
-| 기능 | Method | Endpoint |
-| --- | --- | --- |
-| 댓글 작성 | POST | `/posts/{postId}/comments` |
-| 댓글 수정 | PATCH | `/posts/{postId}/comments/{commentId}` |
-| 댓글 삭제 | DELETE | `/posts/{postId}/comments/{commentId}` |
-
----
-
-### 카테고리
-
-| 기능 | Method | Endpoint |
-| --- | --- | --- |
-| 카테고리 목록 조회 | GET | `/categories` |
-
----
-
-### 이미지
-
-| 기능 | Method | Endpoint |
-| --- | --- | --- |
-| 이미지 업로드 | POST | `/images` |
-
-```http
-POST /images
-Authorization: Bearer {accessToken}
-Content-Type: multipart/form-data
-```
-
-업로드 성공 후 S3 Object Key를 반환합니다.
-
-```json
-{
-  "image_url": "images/550e8400-e29b-41d4-a716-446655440000.jpeg"
-}
-```
-
-게시글이나 사용자 정보를 조회할 때는 해당 Object Key를 Presigned URL로 변환하여 응답합니다.
-
