@@ -101,9 +101,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/users/signup",
-                                "/users/signin",
-                                "/uploads/images/**",
-                                "/uploads/categories/**"
+                                "/users/signin"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
