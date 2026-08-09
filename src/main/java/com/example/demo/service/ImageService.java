@@ -41,10 +41,12 @@ public class ImageService {
             return null;
         }
 
+        String normalizedObjectKey = normalizeObjectKey(objectKey);
+
         GetObjectRequest getObjectRequest =
                 GetObjectRequest.builder()
                         .bucket(bucketName)
-                        .key(objectKey)
+                        .key(normalizedObjectKey)
                         .build();
 
         GetObjectPresignRequest presignRequest =
@@ -57,6 +59,24 @@ public class ImageService {
                 s3Presigner.presignGetObject(presignRequest);
 
         return presignedRequest.url().toString();
+    }
+
+    private String normalizeObjectKey(String objectKey) {
+        if (objectKey.startsWith("/uploads/images/")) {
+            return objectKey.replaceFirst(
+                    "^/uploads/images/",
+                    "images/"
+            );
+        }
+
+        if (objectKey.startsWith("/uploads/categories/")) {
+            return objectKey.replaceFirst(
+                    "^/uploads/categories/",
+                    "categories/"
+            );
+        }
+
+        return objectKey;
     }
 
     public ImageUploadResponse uploadImage(MultipartFile image) {

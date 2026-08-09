@@ -23,17 +23,20 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final ImageService imageService;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenProvider jwtTokenProvider,
-            AuthenticationManager authenticationManager
+            AuthenticationManager authenticationManager,
+            ImageService imageService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.authenticationManager = authenticationManager;
+        this.imageService = imageService;
     }
 
     public SignupResponse signup(SignupRequest request) {
@@ -97,7 +100,7 @@ public class UserService {
                 user.getUserId(),
                 user.getEmail(),
                 user.getNickname(),
-                user.getProfileImage()
+                imageService.createPresignedUrl(user.getProfileImage())
         );
     }
 
@@ -120,7 +123,7 @@ public class UserService {
 
         return new UpdateUserInfoResponse(
                 user.getNickname(),
-                user.getProfileImage()
+                imageService.createPresignedUrl(user.getProfileImage())
         );
     }
 

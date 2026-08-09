@@ -17,13 +17,16 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final PostCategoryRepository postCategoryRepository;
+    private final ImageService imageService;
 
     public CategoryService(
             CategoryRepository categoryRepository,
-            PostCategoryRepository postCategoryRepository
+            PostCategoryRepository postCategoryRepository,
+            ImageService imageService
     ) {
         this.categoryRepository = categoryRepository;
         this.postCategoryRepository = postCategoryRepository;
+        this.imageService = imageService;
     }
 
     public CategoryListResponse getCategoryList() {
@@ -45,7 +48,7 @@ public class CategoryService {
                         .map(category -> new CategoryListItemResponse(
                                 category.getCategoryId(),
                                 category.getName(),
-                                category.getImage(),
+                                imageService.createPresignedUrl(category.getImage()),
                                 postCountByCategoryId.getOrDefault(
                                         category.getCategoryId(),
                                         0L

@@ -264,7 +264,9 @@ public class PostService {
                                                             postCategory
                                                                     .getCategory()
                                                                     .getName(),
-                                                            postCategory.getCategory().getImage()
+                                                            imageService.createPresignedUrl(
+                                                                    postCategory.getCategory().getImage()
+                                                            )
                                                     ),
                                             Collectors.toList()
                                     )
@@ -345,7 +347,9 @@ public class PostService {
                                                             postCategory
                                                                     .getCategory()
                                                                     .getName(),
-                                                            postCategory.getCategory().getImage()
+                                                            imageService.createPresignedUrl(
+                                                                    postCategory.getCategory().getImage()
+                                                            )
                                                     ),
                                             Collectors.toList()
                                     )
@@ -424,7 +428,9 @@ public class PostService {
                         .map(postCategory -> new CategoryItemResponse(
                                 postCategory.getCategory().getCategoryId(),
                                 postCategory.getCategory().getName(),
-                                postCategory.getCategory().getImage()
+                                imageService.createPresignedUrl(
+                                        postCategory.getCategory().getImage()
+                                )
                         ))
                         .toList();
 
@@ -767,7 +773,9 @@ public class PostService {
             return null;
         }
 
-        return user.getProfileImage();
+        return imageService.createPresignedUrl(
+                user.getProfileImage()
+        );
     }
 
 

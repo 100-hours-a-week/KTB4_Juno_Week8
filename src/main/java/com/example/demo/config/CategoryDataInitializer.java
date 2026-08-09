@@ -25,27 +25,27 @@ public class CategoryDataInitializer implements CommandLineRunner {
         List<CategoryDefaultData> categoryDefaultData = List.of(
                 new CategoryDefaultData(
                         "얼얼한 매운맛",
-                        "/uploads/categories/spicy.webp"
+                        "categories/spicy.webp"
                 ),
                 new CategoryDefaultData(
                         "달콤고소한 맛",
-                        "/uploads/categories/sweet-nutty.webp"
+                        "categories/sweet-nutty.webp"
                 ),
                 new CategoryDefaultData(
                         "새콤상큼한 맛",
-                        "/uploads/categories/sour-fresh.webp"
+                        "categories/sour-fresh.webp"
                 ),
                 new CategoryDefaultData(
                         "짭짤한 간장 맛",
-                        "/uploads/categories/soy-salty.webp"
+                        "categories/soy-salty.webp"
                 ),
                 new CategoryDefaultData(
                         "고소한 참깨 맛",
-                        "/uploads/categories/sesame-nutty.webp"
+                        "categories/sesame-nutty.webp"
                 ),
                 new CategoryDefaultData(
                         "연예인 추천 조합",
-                        "/uploads/categories/celebrity-pick.webp"
+                        "categories/celebrity-pick.webp"
                 )
         );
 
