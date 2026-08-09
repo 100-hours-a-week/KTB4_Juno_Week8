@@ -17,6 +17,12 @@ import com.example.demo.repository.ChatMessageRepository;
 import com.example.demo.domain.ChatRoomMember;
 
 import java.util.List;
+import com.example.demo.dto.chat.ChatMessageListResponse;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 
 @Service
@@ -172,5 +178,87 @@ public class ChatService {
                 ));
 
         return receiver.getEmail();
+    }
+    @Transactional(readOnly = true)
+    public ChatMessageListResponse getMessages(
+            Long currentUserId,
+            Long chatRoomId,
+            Long cursor,
+            int size
+    ) {
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "채팅방을 찾을 수 없습니다."
+                ));
+
+        boolean isMember =
+                chatRoomMemberRepository
+                        .existsByChatRoomChatRoomIdAndUserUserId(
+                                chatRoomId,
+                                currentUserId
+                        );
+
+        if (!isMember) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "해당 채팅방의 메시지를 조회할 권한이 없습니다."
+            );
+        }
+
+        int requestSize = size + 1;
+        Pageable pageable = PageRequest.of(0, requestSize);
+
+        List<ChatMessage> chatMessages;
+
+        if (cursor == null) {
+            chatMessages =
+                    chatMessageRepository
+                            .findByChatRoomChatRoomIdOrderByMessageIdDesc(
+                                    chatRoom.getChatRoomId(),
+                                    pageable
+                            );
+        } else {
+            chatMessages =
+                    chatMessageRepository
+                            .findByChatRoomChatRoomIdAndMessageIdLessThanOrderByMessageIdDesc(
+                                    chatRoom.getChatRoomId(),
+                                    cursor,
+                                    pageable
+                            );
+        }
+
+        boolean hasNext = chatMessages.size() > size;
+
+        if (hasNext) {
+            chatMessages = new ArrayList<>(
+                    chatMessages.subList(0, size)
+            );
+        } else {
+            chatMessages = new ArrayList<>(chatMessages);
+        }
+
+        Collections.reverse(chatMessages);
+
+        List<ChatMessageResponse> messages = chatMessages.stream()
+                .map(message -> new ChatMessageResponse(
+                        message.getMessageId(),
+                        message.getChatRoom().getChatRoomId(),
+                        message.getSender().getUserId(),
+                        message.getSender().getNickname(),
+                        message.getContent(),
+                        message.getCreatedAt()
+                ))
+                .toList();
+
+        Long nextCursor = messages.isEmpty()
+                ? null
+                : messages.get(0).getMessageId();
+
+        return new ChatMessageListResponse(
+                messages,
+                nextCursor,
+                hasNext
+        );
     }
 }
