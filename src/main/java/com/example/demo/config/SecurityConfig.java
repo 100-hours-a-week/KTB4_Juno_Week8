@@ -101,7 +101,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/users/signup",
-                                "/users/signin"
+                                "/users/signin",
+                                "/ws"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
