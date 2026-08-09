@@ -6,6 +6,8 @@
 
 Spring Boot를 기반으로 회원 인증, 게시글, 댓글, 북마크, 카테고리, 검색, 정렬, 이미지 업로드 API를 제공하며, MySQL과 Amazon S3를 이용해 데이터를 관리합니다.
 
+[프론트엔드 레포지토리 바로가기](https://github.com/100-hours-a-week/KTB4_Juno_Week8)
+
 ---
 
 ## 1. 프로젝트 소개
