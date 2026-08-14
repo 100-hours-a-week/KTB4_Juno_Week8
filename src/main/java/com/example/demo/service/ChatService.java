@@ -261,4 +261,49 @@ public class ChatService {
                 hasNext
         );
     }
+
+    @Transactional(readOnly = true)
+    public List<ChatMessageResponse> getMessagesAfter(
+            Long currentUserId,
+            Long chatRoomId,
+            Long lastMessageId
+    ) {
+        ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "채팅방을 찾을 수 없습니다."
+                ));
+
+        boolean isMember =
+                chatRoomMemberRepository
+                        .existsByChatRoomChatRoomIdAndUserUserId(
+                                chatRoomId,
+                                currentUserId
+                        );
+
+        if (!isMember) {
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "해당 채팅방의 메시지를 조회할 권한이 없습니다."
+            );
+        }
+
+        List<ChatMessage> chatMessages =
+                chatMessageRepository
+                        .findByChatRoomChatRoomIdAndMessageIdGreaterThanOrderByMessageIdAsc(
+                                chatRoom.getChatRoomId(),
+                                lastMessageId
+                        );
+
+        return chatMessages.stream()
+                .map(message -> new ChatMessageResponse(
+                        message.getMessageId(),
+                        message.getChatRoom().getChatRoomId(),
+                        message.getSender().getUserId(),
+                        message.getSender().getNickname(),
+                        message.getContent(),
+                        message.getCreatedAt()
+                ))
+                .toList();
+    }
 }

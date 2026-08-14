@@ -17,6 +17,8 @@ import com.example.demo.dto.chat.ChatMessageListResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import com.example.demo.dto.chat.ChatMessageResponse;
+import java.util.List;
 
 @RestController
 @RequestMapping("/chat/rooms")
@@ -65,6 +67,27 @@ public class ChatController {
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success(
                         "채팅 메시지 조회에 성공하였습니다.",
+                        response
+                ));
+    }
+
+    @GetMapping("/{chatRoomId}/messages/after")
+    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessagesAfter(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long chatRoomId,
+            @RequestParam Long lastMessageId
+    ) {
+        List<ChatMessageResponse> response =
+                chatService.getMessagesAfter(
+                        userDetails.getUserId(),
+                        chatRoomId,
+                        lastMessageId
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        "누락 채팅 메시지 조회에 성공하였습니다.",
                         response
                 ));
     }
