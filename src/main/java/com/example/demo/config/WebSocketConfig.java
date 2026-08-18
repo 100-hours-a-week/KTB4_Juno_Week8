@@ -7,6 +7,9 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.TaskScheduler;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -20,10 +23,25 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         this.webSocketAuthInterceptor = webSocketAuthInterceptor;
     }
 
+    @Bean
+    public TaskScheduler chatHeartbeatTaskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("websocket-heartbeat-");
+        scheduler.initialize();
+
+        return scheduler;
+    }
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.setApplicationDestinationPrefixes("/app");
-        registry.enableSimpleBroker("/queue");
+
+        registry.enableSimpleBroker("/queue")
+                .setHeartbeatValue(new long[]{10000, 10000})
+                .setTaskScheduler(chatHeartbeatTaskScheduler());
+
         registry.setUserDestinationPrefix("/user");
     }
 
